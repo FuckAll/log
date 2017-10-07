@@ -27,9 +27,22 @@ func TraceOut(traceID string, service string, startTime time.Time) {
 	Std.Output(traceID, Linfo, 2, fmt.Sprintf("finished "+service+", took=%v", time.Since(startTime)))
 }
 
-func TraceCtx(ctx context.Context, service string, format string, v ...interface{}) (string, string, time.Time) {
+func TraceFromIncomingContext(ctx context.Context, service string, format string, v ...interface{}) (string, string, time.Time) {
 	traceID := ""
-	if md, ok := metadata.FromContext(ctx); ok {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if md["tid"] != nil && len(md["tid"]) > 0 {
+			traceID = md["tid"][0]
+		}
+	}
+
+	startTime := time.Now()
+	Std.Output(traceID, Linfo, 2, fmt.Sprintf("calling "+service+", "+format, v...))
+	return traceID, service, startTime
+}
+
+func TraceFromOutgoingContext(ctx context.Context, service string, format string, v ...interface{}) (string, string, time.Time) {
+	traceID := ""
+	if md, ok := metadata.FromOutgoingContext(ctx); ok {
 		if md["tid"] != nil && len(md["tid"]) > 0 {
 			traceID = md["tid"][0]
 		}
